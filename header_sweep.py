@@ -24,7 +24,7 @@ def sweep_and_get_results(target):
 def assess_security_headers(header_list, is_https=False):
 
     must_have_headers = ["X-XSS-Protection", "X-Frame-Options", "Strict-Transport-Security", "Content-Security-Policy"]
-    must_not_have_headers = ["Server", "x-powered-by", "x-aspnet-version", ]
+    must_not_have_headers = ["Server", "x-powered-by", "x-aspnet-version", "Access-Control-Allow-Origin"]
     must_have_values = {"Content-Type": "charset", "Cache-Control": "no-cache", "X-Permitted-Cross-Domain-Policies": "none",
                         "X-Content-Type-Options": "nosniff"}
 
@@ -57,8 +57,12 @@ def assess_security_headers(header_list, is_https=False):
     for bad_header in must_not_have_headers:
         if bad_header.lower() in header_list.keys():
             bad_headers[bad_header] = header_list[bad_header.lower()]
+            if "access-control-allow-origin" in bad_header.lower():
+                bad_headers[bad_header] += " + (CORS) Check the actual header value to infer severity. ((*) is the highest severity) +"
+
     try:
         cookies = header_list["set-cookie"].split("\n")
+
     except KeyError:
         cookies = {}
     for cookie in cookies:
@@ -138,7 +142,7 @@ def header_sweep(argv):
         print(colorama.Fore.GREEN + "*** " + strength + " : " + value + " ***")
 
     if len(bads) > 0:
-        print(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible sensitive information contained : +++")
+        print(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible insecure values or sensitive information contained : +++")
         if output_file != "":
                 with open(output_file, "a+") as fp:
                     fp.write(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible sensitive information contained : +++\n")
@@ -156,8 +160,8 @@ def header_sweep(argv):
         for cookie, value in cookies.iteritems():
             if output_file != "":
                 with open(output_file, "a+") as fp:
-                    fp.write(colorama.Fore.RED + "*** " + cookie + " : " + value + " ***\n")
-            print(colorama.Fore.RED + "*** " + cookie + " : " + value + " ***")
+                    fp.write(colorama.Fore.RED + "*** " + cookie + "  " + value + " ***\n")
+            print(colorama.Fore.RED + "*** " + cookie + "  " + value + " ***")
 
     print(colorama.Fore.BLUE + "\n\n+++ Sweep Finished at : " + str(datetime.datetime.now()) + " +++")
     if output_file != "":
