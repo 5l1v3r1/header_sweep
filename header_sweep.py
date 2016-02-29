@@ -145,7 +145,7 @@ def header_sweep(argv):
         print(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible insecure values or sensitive information contained : +++")
         if output_file != "":
                 with open(output_file, "a+") as fp:
-                    fp.write(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible sensitive information contained : +++\n")
+                    fp.write(colorama.Fore.BLUE + "\n\n+++ Headers detected with possible insecure values or sensitive information contained : +++\n")
         for bad, value in bads.iteritems():
             if output_file != "":
                 with open(output_file, "a+") as fp:
