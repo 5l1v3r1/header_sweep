@@ -13,7 +13,7 @@ def sweep_and_get_results(target):
 
     for sample_req in request_list:
         method, req_url = sample_req.split("|")
-        r = requests.request(method, req_url)
+        r = requests.request(method, req_url, verify=False)
         header_list.update(r.headers.lower_items())
         if "https" in r.url:
             is_https = True
@@ -23,10 +23,12 @@ def sweep_and_get_results(target):
 
 def assess_security_headers(header_list, is_https=False):
 
-    must_have_headers = ["X-XSS-Protection", "X-Frame-Options", "Strict-Transport-Security", "Content-Security-Policy"]
+    must_have_headers = ["X-XSS-Protection", "X-Frame-Options", "Content-Security-Policy"]
     must_not_have_headers = ["Server", "x-powered-by", "x-aspnet-version", "Access-Control-Allow-Origin"]
     must_have_values = {"Content-Type": "charset", "Cache-Control": "no-cache", "X-Permitted-Cross-Domain-Policies": "none",
                         "X-Content-Type-Options": "nosniff"}
+
+    must_have_https_headers = ["Strict-Transport-Security", "Public-Key-Pins"]
 
     missing_headers = {}
     found_headers = {}
@@ -34,14 +36,18 @@ def assess_security_headers(header_list, is_https=False):
     bad_cookies = {}
 
     for sec_header in must_have_headers:
-        if sec_header.lower() not in header_list.keys() and sec_header != "Strict-Transport-Security":
+        if sec_header.lower() not in header_list.keys():
             missing_headers[sec_header] = "Header Not Present."
-
-        if sec_header == "Strict-Transport-Security" and is_https is True and sec_header.lower() not in header_list.keys():
-            missing_headers[sec_header] = "HTTPS used and Header Not Present."
 
         if sec_header.lower() in header_list.keys() and sec_header not in missing_headers.keys():
             found_headers[sec_header] = header_list[sec_header.lower()]
+
+    if is_https is True:
+        for sec_header in must_have_https_headers:
+            if sec_header.lower() not in header_list.keys():
+                missing_headers[sec_header] = "HTTPS used and Header Not Present."
+            if sec_header.lower() in header_list.keys() and sec_header not in missing_headers.keys():
+                found_headers[sec_header] = header_list[sec_header.lower()]
 
     for sec_header, sec_value in must_have_values.iteritems():
         if sec_header.lower() not in header_list.keys():
