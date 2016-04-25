@@ -5,7 +5,7 @@ import datetime
 from sys import argv, exit
 
 
-def sweep_and_get_results(target):
+def sweep_and_get_results(target, verify_certs=True, auth_creds=[]):
 
     header_list = {}
     is_https = False
@@ -13,7 +13,8 @@ def sweep_and_get_results(target):
 
     for sample_req in request_list:
         method, req_url = sample_req.split("|")
-        r = requests.request(method, req_url, verify=False)
+        r = requests.request(method, req_url, verify=verify_certs, auth=tuple(auth_creds))
+        print(r)
         header_list.update(r.headers.lower_items())
         if "https" in r.url:
             is_https = True
@@ -88,27 +89,38 @@ def assess_security_headers(header_list, is_https=False):
     return [found_headers, missing_headers, bad_headers, bad_cookies]
 
 
+def usage():
+    print(colorama.Fore.BLUE + "usage : header_sweep.py -t <target_url> -o <output_file>\n "
+                                   "--no-cert : Turn off TLS certificate validation\n --auth=username:password : Use basic auth credentials")
+
+
 def header_sweep(argv):
     target_url = ""
     output_file = ""
+    verify_certs = True
+    auth_creds = []
     try:
-        opts, args = getopt.getopt(argv, "ht:o:")
+        opts, args = getopt.getopt(argv, "ht:o:", ["no-cert", "auth="])
     except getopt.GetoptError:
-        print(colorama.Fore.BLUE + "usage : header_sweep.py -t <target_url> -o <output_file>")
+        usage()
         exit(2)
 
     if len(argv) == 0:
-        print(colorama.Fore.BLUE + "usage : header_sweep.py -t <target_url> -o <output_file>")
+        usage()
         exit(2)
 
     for opt, arg in opts:
         if opt == "-h":
-            print(colorama.Fore.BLUE + "usage : header_sweep.py -t <target_url> -o <output_file>")
+            usage()
             exit()
         elif opt == "-t":
             target_url = arg
         elif opt == "-o":
             output_file = arg
+        elif opt == "--no-cert":
+            verify_certs = False
+        elif opt == "--auth":
+            auth_creds = arg.split(":")
 
     if output_file != "":
         with open(output_file, "w+") as fp:
@@ -121,7 +133,7 @@ def header_sweep(argv):
     print(colorama.Fore.BLUE + "+++ Initializing Sweep at : " + str(datetime.datetime.now()) + " +++")
     print(colorama.Fore.BLUE + "\r---------------------------------------------------------------------")
 
-    header_list, is_https = sweep_and_get_results(target_url)
+    header_list, is_https = sweep_and_get_results(target_url, verify_certs, auth_creds)
     print(colorama.Fore.BLUE+ "\n Headers collected, evaluating...\n\n---------------------------------------------------------------------")
     results = assess_security_headers(header_list, is_https)
 

@@ -9,4 +9,7 @@ Assuming python and pip are available and on global path (you can always use vir
 ### Usage :
 (try -h for details)
 
-<code> python header_sweep.py -t [http[s]://target.url/target.uri] -o [output_file] </code>
+<code> python header_sweep.py -t [http[s]://target.url/target.uri] -o [output_file]
+       --no-cert : Turn off TLS certificate validation
+       --auth=username:password : Use basic auth credentials
+</code>
